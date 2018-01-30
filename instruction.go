@@ -28,9 +28,10 @@ func (i instruction) FilterName() string {
 }
 
 // Respond sends the result/error over the response chan
+// false if error
 func (i instruction) Respond(result string, err error) {
 	if err != nil {
-		result = err.Error()
+		result = fmt.Sprintf("false(%v)", err)
 	}
 
 	i.ResponseChan <- result
@@ -46,7 +47,7 @@ func (i instruction) Execute(f *filterWrapper) (result string, err error) {
 	return ah(f, i.Args)
 }
 
-// newInstruction parses the cmd and returns an executor
+// newInstruction parses the cmd and returns an instruction
 //
 // Format of the is as follows
 // [filter name] [action] [args...]
