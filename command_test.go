@@ -28,13 +28,27 @@ func Test_newInstruction(t *testing.T) {
 		},
 
 		{
+			cmd:    "test set x Y  z",
+			filter: "test",
+			action: "set",
+			args:   []string{"x", "Y", "z"},
+		},
+
+		{
+			cmd:    "test set x     Y  z",
+			filter: "test",
+			action: "set",
+			args:   []string{"x", "Y", "z"},
+		},
+
+		{
 			cmd: "test ",
 			err: true,
 		},
 	}
 
 	for _, c := range tests {
-		i, err := newInstruction(c.cmd, nil)
+		i, err := parseCommand(c.cmd, nil)
 		if err != nil {
 			if c.err {
 				continue

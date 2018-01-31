@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Executor executes instruction/instruction set on a given filter
+// Executor executes command/command-set on a given filter
 // and responds with a result
 type Executor interface {
 	FilterName() string
@@ -13,9 +13,9 @@ type Executor interface {
 	Respond(result string, err error)
 }
 
-// instruction refers to single instruction to be performed on the filter using args provided
+// command refers to single command to be performed on the filter using args provided
 // and a Response channel to receive the execution result
-type instruction struct {
+type command struct {
 	Filter       string
 	Action       string
 	Args         []string
@@ -23,13 +23,13 @@ type instruction struct {
 }
 
 // FilterName returns the name of the filter
-func (i instruction) FilterName() string {
+func (i command) FilterName() string {
 	return i.Filter
 }
 
 // Respond sends the result/error over the response chan
 // false if error
-func (i instruction) Respond(result string, err error) {
+func (i command) Respond(result string, err error) {
 	if err != nil {
 		result = fmt.Sprintf("false(%v)", err)
 	}
@@ -38,7 +38,7 @@ func (i instruction) Respond(result string, err error) {
 }
 
 // Execute fetches the appropriate action handler and executes the action on filter
-func (i instruction) Execute(f *filterWrapper) (result string, err error) {
+func (i command) Execute(f *filterWrapper) (result string, err error) {
 	ah, ok := actionMultiplexer[i.Filter]
 	if !ok {
 		return result, fmt.Errorf("unknown action: %s", i.Action)
@@ -47,20 +47,30 @@ func (i instruction) Execute(f *filterWrapper) (result string, err error) {
 	return ah(f, i.Args)
 }
 
-// newInstruction parses the cmd and returns an instruction
+// parseCommand parses the cmd and returns an command
 //
-// Format of the is as follows
+// Format of the command is as follows
 // [filter name] [action] [args...]
-func newInstruction(cmd string, respChan chan<- string) (*instruction, error) {
-	pcmd := strings.Split(strings.TrimSpace(cmd), " ")
-	if len(pcmd) < 2 {
+// command requires at least filter-name and an action
+func parseCommand(cmd string, respChan chan<- string) (*command, error) {
+
+	var args []string
+	for _, arg := range strings.Split(strings.TrimSpace(cmd), " ") {
+		arg = strings.TrimSpace(arg)
+		if arg == "" {
+			continue
+		}
+		args = append(args, arg)
+	}
+
+	if len(args) < 2 {
 		return nil, fmt.Errorf("require atleast 2 arguments")
 	}
 
-	return &instruction{
-		Filter:       strings.ToLower(pcmd[0]),
-		Action:       strings.ToLower(pcmd[1]),
-		Args:         pcmd[2:],
+	return &command{
+		Filter:       strings.ToLower(args[0]),
+		Action:       strings.ToLower(args[1]),
+		Args:         args[2:],
 		ResponseChan: respChan,
 	}, nil
 }

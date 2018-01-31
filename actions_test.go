@@ -3,6 +3,8 @@ package cuckooc
 import (
 	"reflect"
 	"testing"
+
+	"github.com/vedhavyas/cuckoo-filter"
 )
 
 func Test_createHandler(t *testing.T) {
@@ -47,7 +49,7 @@ func Test_createHandler(t *testing.T) {
 	}
 
 	for _, c := range tests {
-		i, err := newInstruction(c.cmd, nil)
+		i, err := parseCommand(c.cmd, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -71,6 +73,50 @@ func Test_createHandler(t *testing.T) {
 		bs := fr.FieldByName("bucketSize")
 		if c.bs != uint8(bs.Uint()) {
 			t.Fatalf("expected %d bucket size but got %d", c.bs, bs.Uint())
+		}
+	}
+}
+
+func Test_setHandler(t *testing.T) {
+	tests := []struct {
+		cmd    string
+		result string
+		err    bool
+	}{
+		{
+			cmd:    "test set x Y Z abc",
+			result: "true true true true",
+		},
+
+		{
+			cmd:    "test set a  b",
+			result: "true true",
+		},
+
+		{
+			cmd: "test set",
+			err: true,
+		},
+	}
+
+	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	for _, c := range tests {
+		i, err := parseCommand(c.cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		r, err := setHandler(fw, i.Args)
+		if err != nil {
+			if c.err {
+				continue
+			}
+
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if r != c.result {
+			t.Fatalf("expected %s but got %s", c.result, r)
 		}
 	}
 }

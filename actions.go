@@ -3,6 +3,7 @@ package cuckooc
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/vedhavyas/cuckoo-filter"
 )
@@ -16,7 +17,7 @@ var actionMultiplexer = map[string]func(fw *filterWrapper, args []string) (resul
 // error when filter is already created
 //
 // args for create handler
-// test create [count] [bucket size]
+// [filter-name] create [count] [bucket size]
 // if count/bucket size are not provide, defaults to standard cuckoo filter
 func createHandler(fw *filterWrapper, args []string) (result string, err error) {
 	if fw.f != nil {
@@ -48,4 +49,24 @@ func createHandler(fw *filterWrapper, args []string) (result string, err error) 
 
 	fw.f = f
 	return "true", nil
+}
+
+// setHandler handles the set operations on the filter
+//
+// cmd format for setHandler
+// [filter-name] set [args...]
+// handler can handle multiple set operations in a single command
+// require atleast one arg
+func setHandler(fw *filterWrapper, args []string) (result string, err error) {
+	if len(args) < 1 {
+		return result, fmt.Errorf("require atleast one arg for set operation")
+	}
+
+	var results []string
+	for _, x := range args {
+		ok := fw.f.UInsert([]byte(x))
+		results = append(results, fmt.Sprint(ok))
+	}
+
+	return strings.Join(results, " "), nil
 }
