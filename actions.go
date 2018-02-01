@@ -13,6 +13,7 @@ var actionMultiplexer = map[string]func(fw *filterWrapper, args []string) (resul
 	"create": createHandler,
 	"set":    setHandler,
 	"setu":   setUniqueHandler,
+	"check":  checkHandler,
 }
 
 // createHandler creates cuckoo filter if not created already
@@ -53,6 +54,20 @@ func createHandler(fw *filterWrapper, args []string) (result string, err error) 
 	return "true", nil
 }
 
+func commonHandler(f func([]byte) bool, args []string) (result string, err error) {
+	if len(args) < 1 {
+		return result, fmt.Errorf("require atleast one argument")
+	}
+
+	var results []string
+	for _, x := range args {
+		ok := f([]byte(x))
+		results = append(results, fmt.Sprint(ok))
+	}
+
+	return strings.Join(results, " "), nil
+}
+
 // setHandler handles the set operations on the filter
 //
 // cmd format for setHandler
@@ -60,35 +75,24 @@ func createHandler(fw *filterWrapper, args []string) (result string, err error) 
 // handler can handle multiple set operations in a single command
 // requires at least one argument
 func setHandler(fw *filterWrapper, args []string) (result string, err error) {
-	if len(args) < 1 {
-		return result, fmt.Errorf("require atleast one arg for set operation")
-	}
-
-	var results []string
-	for _, x := range args {
-		ok := fw.f.UInsert([]byte(x))
-		results = append(results, fmt.Sprint(ok))
-	}
-
-	return strings.Join(results, " "), nil
+	return commonHandler(fw.f.UInsert, args)
 }
 
 // setUniqueHandler handles the set unique operations
 //
-//format for setUniqueHandler
+// format for setUniqueHandler
 // [filter-name] setu [args...]
 // requires at least one argument
 func setUniqueHandler(fw *filterWrapper, args []string) (result string, err error) {
-	if len(args) < 1 {
-		return result, fmt.Errorf("require atleast one arg")
-	}
+	return commonHandler(fw.f.UInsertUnique, args)
 
-	var results []string
-	for _, x := range args {
-		ok := fw.f.UInsertUnique([]byte(x))
-		results = append(results, fmt.Sprint(ok))
-	}
+}
 
-	return strings.Join(results, " "), nil
-
+// checkHandler handles the lookup operations
+//
+// format for checkHandler
+// [filter-name] check [args...]
+// requires at least one argument
+func checkHandler(fw *filterWrapper, args []string) (result string, err error) {
+	return commonHandler(fw.f.ULookup, args)
 }

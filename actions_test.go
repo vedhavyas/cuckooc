@@ -9,53 +9,48 @@ import (
 
 func Test_createHandler(t *testing.T) {
 	tests := []struct {
-		cmd   string
+		args  []string
 		count uint32
 		bs    uint8
 		err   bool
 	}{
 		{
-			cmd:   "test create 100 16",
+			args:  []string{"100", "16"},
 			count: 8,
 			bs:    16,
 		},
 
 		{
-			cmd:   "test create 100",
+			args:  []string{"100"},
 			count: 16,
 			bs:    8,
 		},
 
 		{
-			cmd:   "test create",
+			args:  []string{},
 			count: 524288,
 			bs:    8,
 		},
 
 		{
-			cmd: "test create 100 18",
-			err: true,
+			args: []string{"100", "18"},
+			err:  true,
 		},
 
 		{
-			cmd: "test create abs",
-			err: true,
+			args: []string{"not a number"},
+			err:  true,
 		},
 
 		{
-			cmd: "test create 100 abs",
-			err: true,
+			args: []string{"100", "not a number"},
+			err:  true,
 		},
 	}
 
 	for _, c := range tests {
-		i, err := parseCommand(c.cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
 		fw := new(filterWrapper)
-		_, err = createHandler(fw, i.Args)
+		_, err := createHandler(fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -79,34 +74,29 @@ func Test_createHandler(t *testing.T) {
 
 func Test_setHandler(t *testing.T) {
 	tests := []struct {
-		cmd    string
+		args   []string
 		result string
 		err    bool
 	}{
 		{
-			cmd:    "test set x Y Z abc",
+			args:   []string{"x", "Y", "Z", "abc"},
 			result: "true true true true",
 		},
 
 		{
-			cmd:    "test set a  b",
+			args:   []string{"a", "b"},
 			result: "true true",
 		},
 
 		{
-			cmd: "test set",
-			err: true,
+			args: []string{},
+			err:  true,
 		},
 	}
 
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		i, err := parseCommand(c.cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		r, err := setHandler(fw, i.Args)
+		r, err := setHandler(fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -123,34 +113,29 @@ func Test_setHandler(t *testing.T) {
 
 func Test_setUniqueHandler(t *testing.T) {
 	tests := []struct {
-		cmd    string
+		args   []string
 		result string
 		err    bool
 	}{
 		{
-			cmd:    "test setu x Y Z abc",
+			args:   []string{"x", "Y", "Z", "abc"},
 			result: "true true true true",
 		},
 
 		{
-			cmd:    "test setu a  b x y",
+			args:   []string{"a", "b", "x", "y"},
 			result: "true true true true",
 		},
 
 		{
-			cmd: "test setu",
-			err: true,
+			args: []string{},
+			err:  true,
 		},
 	}
 
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		i, err := parseCommand(c.cmd, nil)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		r, err := setUniqueHandler(fw, i.Args)
+		r, err := setUniqueHandler(fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -161,6 +146,47 @@ func Test_setUniqueHandler(t *testing.T) {
 
 		if r != c.result {
 			t.Fatalf("expected %s but got %s", c.result, r)
+		}
+	}
+}
+
+func Test_checkHandler(t *testing.T) {
+	setArgs := []string{"a", "1", "x", "Y", "X", "abc", "test"}
+	tests := []struct {
+		args   []string
+		result string
+		err    bool
+	}{
+		{
+			args:   []string{"a", "b", "c"},
+			result: "true false false",
+		},
+
+		{
+			args:   []string{"1", "x", "Y", "ABC"},
+			result: "true true true false",
+		},
+
+		{
+			args: []string{},
+			err:  true,
+		},
+	}
+
+	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	setUniqueHandler(fw, setArgs)
+	for _, c := range tests {
+		result, err := checkHandler(fw, c.args)
+		if err != nil {
+			if c.err {
+				continue
+			}
+
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if result != c.result {
+			t.Fatalf("expected %s but got %s", c.result, result)
 		}
 	}
 }
