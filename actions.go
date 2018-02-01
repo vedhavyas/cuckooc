@@ -11,6 +11,8 @@ import (
 // actionMultiplexer is used to fetch the appropriate handler for a given action
 var actionMultiplexer = map[string]func(fw *filterWrapper, args []string) (result string, err error){
 	"create": createHandler,
+	"set":    setHandler,
+	"setu":   setUniqueHandler,
 }
 
 // createHandler creates cuckoo filter if not created already
@@ -56,7 +58,7 @@ func createHandler(fw *filterWrapper, args []string) (result string, err error) 
 // cmd format for setHandler
 // [filter-name] set [args...]
 // handler can handle multiple set operations in a single command
-// require atleast one arg
+// requires at least one argument
 func setHandler(fw *filterWrapper, args []string) (result string, err error) {
 	if len(args) < 1 {
 		return result, fmt.Errorf("require atleast one arg for set operation")
@@ -69,4 +71,24 @@ func setHandler(fw *filterWrapper, args []string) (result string, err error) {
 	}
 
 	return strings.Join(results, " "), nil
+}
+
+// setUniqueHandler handles the set unique operations
+//
+//format for setUniqueHandler
+// [filter-name] setu [args...]
+// requires at least one argument
+func setUniqueHandler(fw *filterWrapper, args []string) (result string, err error) {
+	if len(args) < 1 {
+		return result, fmt.Errorf("require atleast one arg")
+	}
+
+	var results []string
+	for _, x := range args {
+		ok := fw.f.UInsertUnique([]byte(x))
+		results = append(results, fmt.Sprint(ok))
+	}
+
+	return strings.Join(results, " "), nil
+
 }

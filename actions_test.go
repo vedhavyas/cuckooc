@@ -120,3 +120,47 @@ func Test_setHandler(t *testing.T) {
 		}
 	}
 }
+
+func Test_setUniqueHandler(t *testing.T) {
+	tests := []struct {
+		cmd    string
+		result string
+		err    bool
+	}{
+		{
+			cmd:    "test setu x Y Z abc",
+			result: "true true true true",
+		},
+
+		{
+			cmd:    "test setu a  b x y",
+			result: "true true true true",
+		},
+
+		{
+			cmd: "test setu",
+			err: true,
+		},
+	}
+
+	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	for _, c := range tests {
+		i, err := parseCommand(c.cmd, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		r, err := setUniqueHandler(fw, i.Args)
+		if err != nil {
+			if c.err {
+				continue
+			}
+
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if r != c.result {
+			t.Fatalf("expected %s but got %s", c.result, r)
+		}
+	}
+}
