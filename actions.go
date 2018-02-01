@@ -96,3 +96,12 @@ func setUniqueHandler(fw *filterWrapper, args []string) (result string, err erro
 func checkHandler(fw *filterWrapper, args []string) (result string, err error) {
 	return commonHandler(fw.f.ULookup, args)
 }
+
+// deleteHandler handles delete operations
+//
+// format for deleteHandler
+// [filter-name] delete [args...]
+// requires at least one argument
+func deleteHandler(fw *filterWrapper, args []string) (result string, err error) {
+	return commonHandler(fw.f.UDelete, args)
+}

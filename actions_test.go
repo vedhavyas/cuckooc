@@ -190,3 +190,44 @@ func Test_checkHandler(t *testing.T) {
 		}
 	}
 }
+
+func Test_deleteHandler(t *testing.T) {
+	setArgs := []string{"a", "1", "x", "Y", "X", "abc", "test"}
+	tests := []struct {
+		args   []string
+		result string
+		err    bool
+	}{
+		{
+			args:   []string{"a", "b", "c"},
+			result: "true false false",
+		},
+
+		{
+			args:   []string{"1", "x", "Y", "ABC"},
+			result: "true true true false",
+		},
+
+		{
+			args: []string{},
+			err:  true,
+		},
+	}
+
+	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	setUniqueHandler(fw, setArgs)
+	for _, c := range tests {
+		result, err := deleteHandler(fw, c.args)
+		if err != nil {
+			if c.err {
+				continue
+			}
+
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if result != c.result {
+			t.Fatalf("expected %s but got %s", c.result, result)
+		}
+	}
+}
