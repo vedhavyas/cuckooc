@@ -124,5 +124,5 @@ func countHandler(fw *filterWrapper, args []string) (result string, err error) {
 // [filter-name] load
 //any args passed will be ignored
 func loadFactorHandler(fw *filterWrapper, args []string) (result string, err error) {
-	return fmt.Sprint(fw.f.ULoadFactor()), nil
+	return fmt.Sprintf("%.4f", fw.f.ULoadFactor()), nil
 }

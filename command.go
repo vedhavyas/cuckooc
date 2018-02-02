@@ -23,28 +23,28 @@ type command struct {
 }
 
 // FilterName returns the name of the filter
-func (i command) FilterName() string {
-	return i.Filter
+func (c command) FilterName() string {
+	return c.Filter
 }
 
 // Respond sends the result/error over the response chan
 // false if error
-func (i command) Respond(result string, err error) {
+func (c command) Respond(result string, err error) {
 	if err != nil {
 		result = fmt.Sprintf("false(%v)", err)
 	}
 
-	i.ResponseChan <- result
+	c.ResponseChan <- result
 }
 
 // Execute fetches the appropriate action handler and executes the action on filter
-func (i command) Execute(f *filterWrapper) (result string, err error) {
-	ah, ok := actionMultiplexer[i.Filter]
+func (c command) Execute(f *filterWrapper) (result string, err error) {
+	ah, ok := actionMultiplexer[c.Action]
 	if !ok {
-		return result, fmt.Errorf("unknown action: %s", i.Action)
+		return result, fmt.Errorf("unknown action: %s", c.Action)
 	}
 
-	return ah(f, i.Args)
+	return ah(f, c.Args)
 }
 
 // parseCommand parses the cmd and returns an command
