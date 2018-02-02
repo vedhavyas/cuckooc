@@ -14,6 +14,9 @@ var actionMultiplexer = map[string]func(fw *filterWrapper, args []string) (resul
 	"set":    setHandler,
 	"setu":   setUniqueHandler,
 	"check":  checkHandler,
+	"delete": deleteHandler,
+	"count":  countHandler,
+	"load":   loadFactorHandler,
 }
 
 // createHandler creates cuckoo filter if not created already
@@ -104,4 +107,22 @@ func checkHandler(fw *filterWrapper, args []string) (result string, err error) {
 // requires at least one argument
 func deleteHandler(fw *filterWrapper, args []string) (result string, err error) {
 	return commonHandler(fw.f.UDelete, args)
+}
+
+// countHandler handles the count of items set in filter
+//
+// format for countHandler
+// [filter-name] count
+// any args passed will be ignored
+func countHandler(fw *filterWrapper, args []string) (result string, err error) {
+	return fmt.Sprint(fw.f.UCount()), nil
+}
+
+// loadFactorHandler handles requests for the load factor of a filter
+//
+// format for loadFactorHandler
+// [filter-name] load
+//any args passed will be ignored
+func loadFactorHandler(fw *filterWrapper, args []string) (result string, err error) {
+	return fmt.Sprint(fw.f.ULoadFactor()), nil
 }
