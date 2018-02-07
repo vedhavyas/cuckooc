@@ -39,7 +39,7 @@ func (c command) Respond(result string, err error) {
 
 // Execute fetches the appropriate action handler and executes the action on filter
 func (c command) Execute(f *filterWrapper) (result string, err error) {
-	ah, ok := actionMultiplexer[c.Action]
+	ah, ok := handlerMux[c.Action]
 	if !ok {
 		return result, fmt.Errorf("unknown action: %s", c.Action)
 	}

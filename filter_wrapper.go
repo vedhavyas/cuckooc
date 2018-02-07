@@ -14,7 +14,7 @@ type filterWrapper struct {
 
 // newWrapper returns a new filter wrapper.
 // filter will not be initialised since the caller will be
-// a filter manager passing cmds to appropriate filter wrapper which
+// a filter manager passing commands to appropriate filter wrapper which
 // is running in its own go routine. We do not want to block manager to create
 // filter. Hence, we off load it to filter wrapper's go routine
 func newWrapper(cmdCh <-chan Executor) *filterWrapper {

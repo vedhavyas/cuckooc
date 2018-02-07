@@ -8,8 +8,9 @@ import (
 	"github.com/vedhavyas/cuckoo-filter"
 )
 
-// actionMultiplexer is used to fetch the appropriate handler for a given action
-var actionMultiplexer = map[string]func(fw *filterWrapper, args []string) (result string, err error){
+// handlerMux is used to fetch the appropriate handler for a given action
+// TODO(ved) backup handler
+var handlerMux = map[string]func(fw *filterWrapper, args []string) (result string, err error){
 	"create": createHandler,
 	"set":    setHandler,
 	"setu":   setUniqueHandler,
