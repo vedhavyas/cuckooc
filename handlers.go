@@ -139,13 +139,19 @@ func loadFactorHandler(_ Config, fw *filterWrapper, _ []string) (result string, 
 // [filter-name] backup [path to backup folder(overrides the one provided in config)]
 func backupHandler(config Config, fw *filterWrapper, args []string) (result string, err error) {
 	path := config.BackupFolder
-	if len(args) > 0 {
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
 		path = args[0]
 	}
 
 	path = strings.TrimSpace(path)
 	if path == "" {
 		return result, fmt.Errorf("backup folder not provided")
+	}
+
+	// create the folder if not exists
+	err = os.MkdirAll(path, 0766)
+	if err != nil {
+		return result, fmt.Errorf("failed to create backup directory: %v", err)
 	}
 
 	// let's encode the filter
@@ -156,7 +162,7 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 	}
 
 	bw := backupFilter{Name: fw.name, FilterBytes: buf.Bytes()}
-	path = filepath.Join(path, fmt.Sprintf("%s-latest.filter", fw.name))
+	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", fw.name))
 	fh, err := os.Create(path)
 	if err != nil {
 		return result, fmt.Errorf("failed to create backu file: %v", err)

@@ -236,3 +236,64 @@ func Test_deleteHandler(t *testing.T) {
 		}
 	}
 }
+
+func Test_backupHandler(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		asConfig bool
+		err      bool
+	}{
+		{
+			name:     "test",
+			path:     "./testdata/backups",
+			asConfig: true,
+			err:      false,
+		},
+
+		{
+			name:     "test-1",
+			path:     "./testdata/backups-1",
+			asConfig: false,
+			err:      false,
+		},
+
+		{
+			name:     "test-2",
+			path:     "",
+			asConfig: true,
+			err:      true,
+		},
+	}
+
+	config := Config{}
+	for _, c := range tests {
+		var path string
+		if c.asConfig {
+			config.BackupFolder = c.path
+			path = ""
+		} else {
+			path = c.path
+			config.BackupFolder = ""
+		}
+
+		fw := &filterWrapper{name: c.name, f: cuckoo.StdFilter()}
+		_, err := setHandler(config, fw, []string{"a", "b", "c", "d"})
+		if err != nil {
+			t.Fatalf("unexpected error for setHandler: %v", err)
+		}
+
+		res, err := backupHandler(config, fw, []string{path})
+		if err != nil {
+			if c.err {
+				continue
+			}
+
+			t.Fatalf("unexpected error for backupHandler: %v", err)
+		}
+
+		if res != "true" {
+			t.Fatalf("expected true but got %s", res)
+		}
+	}
+}
