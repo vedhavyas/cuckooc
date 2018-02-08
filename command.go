@@ -9,8 +9,8 @@ import (
 // and responds with a result
 type Executor interface {
 	FilterName() string
-	Execute(f *filterWrapper) (result string, err error)
-	Respond(result string, err error)
+	Execute(config Config, fw *filterWrapper) (result string, err error)
+	Respond(result string, debug bool, err error)
 }
 
 // command refers to single command to be performed on the filter using args provided
@@ -29,22 +29,25 @@ func (c command) FilterName() string {
 
 // Respond sends the result/error over the response chan
 // false if error
-func (c command) Respond(result string, err error) {
+func (c command) Respond(result string, debug bool, err error) {
 	if err != nil {
-		result = fmt.Sprintf("false(%v)", err)
+		result = "false"
+		if debug {
+			result = fmt.Sprintf("false(%v)", err)
+		}
 	}
 
 	c.ResponseChan <- result
 }
 
 // Execute fetches the appropriate action handler and executes the action on filter
-func (c command) Execute(f *filterWrapper) (result string, err error) {
+func (c command) Execute(config Config, f *filterWrapper) (result string, err error) {
 	ah, ok := handlerMux[c.Action]
 	if !ok {
 		return result, fmt.Errorf("unknown action: %s", c.Action)
 	}
 
-	return ah(f, c.Args)
+	return ah(config, f, c.Args)
 }
 
 // parseCommand parses the cmd and returns an command

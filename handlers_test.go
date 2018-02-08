@@ -48,9 +48,10 @@ func Test_createHandler(t *testing.T) {
 		},
 	}
 
+	config := Config{}
 	for _, c := range tests {
 		fw := new(filterWrapper)
-		_, err := createHandler(fw, c.args)
+		_, err := createHandler(config, fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -94,9 +95,10 @@ func Test_setHandler(t *testing.T) {
 		},
 	}
 
+	config := Config{}
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		r, err := setHandler(fw, c.args)
+		r, err := setHandler(config, fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -133,9 +135,10 @@ func Test_setUniqueHandler(t *testing.T) {
 		},
 	}
 
+	config := Config{}
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		r, err := setUniqueHandler(fw, c.args)
+		r, err := setUniqueHandler(config, fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -173,10 +176,11 @@ func Test_checkHandler(t *testing.T) {
 		},
 	}
 
+	config := Config{}
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
-	setUniqueHandler(fw, setArgs)
+	setUniqueHandler(config, fw, setArgs)
 	for _, c := range tests {
-		result, err := checkHandler(fw, c.args)
+		result, err := checkHandler(config, fw, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -214,10 +218,11 @@ func Test_deleteHandler(t *testing.T) {
 		},
 	}
 
+	config := Config{}
 	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
-	setUniqueHandler(fw, setArgs)
+	setUniqueHandler(config, fw, setArgs)
 	for _, c := range tests {
-		result, err := deleteHandler(fw, c.args)
+		result, err := deleteHandler(config, fw, c.args)
 		if err != nil {
 			if c.err {
 				continue

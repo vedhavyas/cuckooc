@@ -8,6 +8,7 @@ import (
 
 // Config represents the configuration for the service
 type Config struct {
+	Debug        bool   `json:"debug"`
 	BackupFolder string `json:"backup_folder"`
 }
 

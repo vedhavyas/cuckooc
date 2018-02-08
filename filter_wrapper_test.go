@@ -36,7 +36,7 @@ func Test_filterWrapper_integration(t *testing.T) {
 		},
 
 		{
-			cmd:    "test load",
+			cmd:    "test loadfactor",
 			result: "0.2188",
 		},
 
@@ -51,17 +51,17 @@ func Test_filterWrapper_integration(t *testing.T) {
 		},
 
 		{
-			cmd:    "test load",
+			cmd:    "test loadfactor",
 			result: "0.0938",
 		},
 	}
 
 	cmdCh := make(chan Executor)
 	respCh := make(chan string)
-	fw := newWrapper(cmdCh)
+	fw := newWrapper("test", cmdCh)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go fw.listen(ctx)
+	go fw.listen(ctx, Config{})
 	for _, c := range tests {
 		exe, err := parseCommand(c.cmd, respCh)
 		if err != nil {
