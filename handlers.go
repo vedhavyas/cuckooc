@@ -173,8 +173,8 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 	if err != nil {
 		return result, fmt.Errorf("failed to create backup file: %v", err)
 	}
-
 	defer fh.Close()
+
 	enc := gob.NewEncoder(fh)
 	err = enc.Encode(bw)
 	if err != nil {
@@ -210,6 +210,7 @@ func reloadHandler(config Config, fw *filterWrapper, args []string) (result stri
 	if err != nil {
 		return result, fmt.Errorf("failed to read backup: %v", err)
 	}
+	defer fh.Close()
 
 	var bw backupFilter
 	rd := bufio.NewReader(fh)
