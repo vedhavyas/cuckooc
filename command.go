@@ -31,9 +31,9 @@ func (c command) FilterName() string {
 // false if error
 func (c command) Respond(result string, debug bool, err error) {
 	if err != nil {
-		result = "false"
+		result = notOk
 		if debug {
-			result = fmt.Sprintf("false(%v)", err)
+			result = fmt.Sprintf("%s(%v)", notOk, err)
 		}
 	}
 

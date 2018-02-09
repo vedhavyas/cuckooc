@@ -1,6 +1,7 @@
 package cuckooc
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/gob"
 	"fmt"
@@ -12,8 +13,12 @@ import (
 	"github.com/vedhavyas/cuckoo-filter"
 )
 
+const (
+	ok    = "true"
+	notOk = "false"
+)
+
 // handlerMux is used to fetch the appropriate handler for a given action
-// TODO(ved) backup handler
 var handlerMux = map[string]func(config Config, fw *filterWrapper, args []string) (result string, err error){
 	"create":     createHandler,
 	"set":        setHandler,
@@ -23,6 +28,7 @@ var handlerMux = map[string]func(config Config, fw *filterWrapper, args []string
 	"count":      countHandler,
 	"loadfactor": loadFactorHandler,
 	"backup":     backupHandler,
+	"reload":     reloadHandler,
 }
 
 // createHandler creates cuckoo filter if not created already
@@ -60,7 +66,7 @@ func createHandler(_ Config, fw *filterWrapper, args []string) (result string, e
 	}
 
 	fw.f = f
-	return "true", nil
+	return ok, nil
 }
 
 func commonHandler(f func([]byte) bool, args []string) (result string, err error) {
@@ -149,7 +155,7 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 	}
 
 	// create the folder if not exists
-	err = os.MkdirAll(path, 0766)
+	err = os.MkdirAll(path, 0700)
 	if err != nil {
 		return result, fmt.Errorf("failed to create backup directory: %v", err)
 	}
@@ -165,7 +171,7 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", fw.name))
 	fh, err := os.Create(path)
 	if err != nil {
-		return result, fmt.Errorf("failed to create backu file: %v", err)
+		return result, fmt.Errorf("failed to create backup file: %v", err)
 	}
 
 	defer fh.Close()
@@ -181,5 +187,42 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 		return result, fmt.Errorf("failed to sync the file: %v", err)
 	}
 
-	return "true", nil
+	return ok, nil
+}
+
+// reloadHandler handles the requests to load the filter from last backup
+//
+// format for reload handler
+// [filter-name] reload [path to backup folder(overrides the one provided in config)]
+func reloadHandler(config Config, fw *filterWrapper, args []string) (result string, err error) {
+	path := config.BackupFolder
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
+		path = args[0]
+	}
+
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return result, fmt.Errorf("backup folder not set to load filter from")
+	}
+
+	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", fw.name))
+	fh, err := os.Open(path)
+	if err != nil {
+		return result, fmt.Errorf("failed to read backup: %v", err)
+	}
+
+	var bw backupFilter
+	rd := bufio.NewReader(fh)
+	dec := gob.NewDecoder(rd)
+	err = dec.Decode(&bw)
+	if err != nil {
+		return result, fmt.Errorf("failed to decode filter: %v", err)
+	}
+
+	fw.f, err = cuckoo.Decode(bytes.NewReader(bw.FilterBytes))
+	if err != nil {
+		return result, fmt.Errorf("failed to load filter: %v", err)
+	}
+
+	return ok, nil
 }
