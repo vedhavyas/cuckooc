@@ -6,8 +6,8 @@ import (
 	"github.com/vedhavyas/cuckoo-filter"
 )
 
-// filterWrapper is a wrapper over cuckoo filter
-type filterWrapper struct {
+// filter is a wrapper over cuckoo filter
+type filter struct {
 	name  string
 	f     *cuckoo.Filter
 	cmdCh <-chan Executor
@@ -26,20 +26,20 @@ type backupFilter struct {
 // a filter manager passing commands to appropriate filter wrapper which
 // is running in its own go routine. We do not want to block manager to create
 // filter. Hence, we off load it to filter wrapper's go routine
-func newWrapper(name string, cmdCh <-chan Executor) *filterWrapper {
-	return &filterWrapper{name: name, cmdCh: cmdCh}
+func newWrapper(name string, cmdCh <-chan Executor) *filter {
+	return &filter{name: name, cmdCh: cmdCh}
 }
 
 // listen will starts to listen commands over cmdCh channel
 // blocking call. should be called in a different go-routine
-func (fw *filterWrapper) listen(ctx context.Context, config Config) {
+func (f *filter) listen(ctx context.Context, config Config) {
 	for {
 		select {
 		case <-ctx.Done():
 			// TODO: backup and exit ?
 			return
-		case exe := <-fw.cmdCh:
-			result, err := exe.Execute(config, fw)
+		case exe := <-f.cmdCh:
+			result, err := exe.Execute(config, f)
 			exe.Respond(result, config.Debug, err)
 		}
 	}

@@ -9,7 +9,7 @@ import (
 // and responds with a result
 type Executor interface {
 	FilterName() string
-	Execute(config Config, fw *filterWrapper) (result string, err error)
+	Execute(config Config, f *filter) (result string, err error)
 	Respond(result string, debug bool, err error)
 }
 
@@ -41,7 +41,7 @@ func (c command) Respond(result string, debug bool, err error) {
 }
 
 // Execute fetches the appropriate action handler and executes the action on filter
-func (c command) Execute(config Config, f *filterWrapper) (result string, err error) {
+func (c command) Execute(config Config, f *filter) (result string, err error) {
 	ah, ok := handlerMux[c.Action]
 	if !ok {
 		return result, fmt.Errorf("unknown action: %s", c.Action)

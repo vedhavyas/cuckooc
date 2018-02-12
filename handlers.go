@@ -19,7 +19,7 @@ const (
 )
 
 // handlerMux is used to fetch the appropriate handler for a given action
-var handlerMux = map[string]func(config Config, fw *filterWrapper, args []string) (result string, err error){
+var handlerMux = map[string]func(config Config, f *filter, args []string) (result string, err error){
 	"create":     createHandler,
 	"set":        setHandler,
 	"setu":       setUniqueHandler,
@@ -37,8 +37,8 @@ var handlerMux = map[string]func(config Config, fw *filterWrapper, args []string
 // args for create handler
 // [filter-name] create [count] [bucket size]
 // if count/bucket size are not provide, defaults to standard cuckoo filter
-func createHandler(_ Config, fw *filterWrapper, args []string) (result string, err error) {
-	if fw.f != nil {
+func createHandler(_ Config, f *filter, args []string) (result string, err error) {
+	if f.f != nil {
 		return "", fmt.Errorf("filter already exists")
 	}
 
@@ -60,12 +60,12 @@ func createHandler(_ Config, fw *filterWrapper, args []string) (result string, e
 		}
 	}
 
-	f, err := cuckoo.NewFilterWithBucketSize(count, bs)
+	filter, err := cuckoo.NewFilterWithBucketSize(count, bs)
 	if err != nil {
 		return result, fmt.Errorf("failed to create filter: %v", err)
 	}
 
-	fw.f = f
+	f.f = filter
 	return ok, nil
 }
 
@@ -89,8 +89,8 @@ func commonHandler(f func([]byte) bool, args []string) (result string, err error
 // [filter-name] set [args...]
 // handler can handle multiple set operations in a single command
 // requires at least one argument
-func setHandler(_ Config, fw *filterWrapper, args []string) (result string, err error) {
-	return commonHandler(fw.f.UInsert, args)
+func setHandler(_ Config, f *filter, args []string) (result string, err error) {
+	return commonHandler(f.f.UInsert, args)
 }
 
 // setUniqueHandler handles the set unique operations
@@ -98,8 +98,8 @@ func setHandler(_ Config, fw *filterWrapper, args []string) (result string, err 
 // format for setUniqueHandler
 // [filter-name] setu [args...]
 // requires at least one argument
-func setUniqueHandler(_ Config, fw *filterWrapper, args []string) (result string, err error) {
-	return commonHandler(fw.f.UInsertUnique, args)
+func setUniqueHandler(_ Config, f *filter, args []string) (result string, err error) {
+	return commonHandler(f.f.UInsertUnique, args)
 
 }
 
@@ -108,8 +108,8 @@ func setUniqueHandler(_ Config, fw *filterWrapper, args []string) (result string
 // format for checkHandler
 // [filter-name] check [args...]
 // requires at least one argument
-func checkHandler(_ Config, fw *filterWrapper, args []string) (result string, err error) {
-	return commonHandler(fw.f.ULookup, args)
+func checkHandler(_ Config, f *filter, args []string) (result string, err error) {
+	return commonHandler(f.f.ULookup, args)
 }
 
 // deleteHandler handles delete operations
@@ -117,8 +117,8 @@ func checkHandler(_ Config, fw *filterWrapper, args []string) (result string, er
 // format for deleteHandler
 // [filter-name] delete [args...]
 // requires at least one argument
-func deleteHandler(_ Config, fw *filterWrapper, args []string) (result string, err error) {
-	return commonHandler(fw.f.UDelete, args)
+func deleteHandler(_ Config, f *filter, args []string) (result string, err error) {
+	return commonHandler(f.f.UDelete, args)
 }
 
 // countHandler handles the count of items set in filter
@@ -126,8 +126,8 @@ func deleteHandler(_ Config, fw *filterWrapper, args []string) (result string, e
 // format for countHandler
 // [filter-name] count
 // any args passed will be ignored
-func countHandler(_ Config, fw *filterWrapper, _ []string) (result string, err error) {
-	return fmt.Sprint(fw.f.UCount()), nil
+func countHandler(_ Config, f *filter, _ []string) (result string, err error) {
+	return fmt.Sprint(f.f.UCount()), nil
 }
 
 // loadFactorHandler handles requests for the load factor of a filter
@@ -135,15 +135,15 @@ func countHandler(_ Config, fw *filterWrapper, _ []string) (result string, err e
 // format for loadFactorHandler
 // [filter-name] loadfactor
 //any args passed will be ignored
-func loadFactorHandler(_ Config, fw *filterWrapper, _ []string) (result string, err error) {
-	return fmt.Sprintf("%.4f", fw.f.ULoadFactor()), nil
+func loadFactorHandler(_ Config, f *filter, _ []string) (result string, err error) {
+	return fmt.Sprintf("%.4f", f.f.ULoadFactor()), nil
 }
 
 // backupHandler handles the backup requests for filters
 //
 // format for backupHandler
 // [filter-name] backup [path to backup folder(overrides the one provided in config)]
-func backupHandler(config Config, fw *filterWrapper, args []string) (result string, err error) {
+func backupHandler(config Config, f *filter, args []string) (result string, err error) {
 	path := config.BackupFolder
 	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
 		path = args[0]
@@ -162,13 +162,13 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 
 	// let's encode the filter
 	var buf bytes.Buffer
-	err = fw.f.Encode(&buf)
+	err = f.f.Encode(&buf)
 	if err != nil {
-		return result, fmt.Errorf("failed to encode filter %s: %v", fw.name, err)
+		return result, fmt.Errorf("failed to encode filter %s: %v", f.name, err)
 	}
 
-	bw := backupFilter{Name: fw.name, FilterBytes: buf.Bytes()}
-	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", fw.name))
+	bw := backupFilter{Name: f.name, FilterBytes: buf.Bytes()}
+	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", f.name))
 	fh, err := os.Create(path)
 	if err != nil {
 		return result, fmt.Errorf("failed to create backup file: %v", err)
@@ -194,7 +194,7 @@ func backupHandler(config Config, fw *filterWrapper, args []string) (result stri
 //
 // format for reload handler
 // [filter-name] reload [path to backup folder(overrides the one provided in config)]
-func reloadHandler(config Config, fw *filterWrapper, args []string) (result string, err error) {
+func reloadHandler(config Config, f *filter, args []string) (result string, err error) {
 	path := config.BackupFolder
 	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
 		path = args[0]
@@ -205,7 +205,7 @@ func reloadHandler(config Config, fw *filterWrapper, args []string) (result stri
 		return result, fmt.Errorf("backup folder not set to load filter from")
 	}
 
-	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", fw.name))
+	path = filepath.Join(path, fmt.Sprintf("%s-latest.cf", f.name))
 	fh, err := os.Open(path)
 	if err != nil {
 		return result, fmt.Errorf("failed to read backup: %v", err)
@@ -220,7 +220,7 @@ func reloadHandler(config Config, fw *filterWrapper, args []string) (result stri
 		return result, fmt.Errorf("failed to decode filter: %v", err)
 	}
 
-	fw.f, err = cuckoo.Decode(bytes.NewReader(bw.FilterBytes))
+	f.f, err = cuckoo.Decode(bytes.NewReader(bw.FilterBytes))
 	if err != nil {
 		return result, fmt.Errorf("failed to load filter: %v", err)
 	}

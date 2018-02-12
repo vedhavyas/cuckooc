@@ -50,8 +50,8 @@ func Test_createHandler(t *testing.T) {
 
 	config := Config{}
 	for _, c := range tests {
-		fw := new(filterWrapper)
-		_, err := createHandler(config, fw, c.args)
+		f := new(filter)
+		_, err := createHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -60,7 +60,7 @@ func Test_createHandler(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		fr := reflect.ValueOf(fw.f).Elem()
+		fr := reflect.ValueOf(f.f).Elem()
 		count := fr.FieldByName("totalBuckets")
 		if c.count != uint32(count.Uint()) {
 			t.Fatalf("expected %d count but got %d", c.count, count.Uint())
@@ -96,9 +96,9 @@ func Test_setHandler(t *testing.T) {
 	}
 
 	config := Config{}
-	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	f := &filter{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		r, err := setHandler(config, fw, c.args)
+		r, err := setHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -136,9 +136,9 @@ func Test_setUniqueHandler(t *testing.T) {
 	}
 
 	config := Config{}
-	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
+	f := &filter{f: cuckoo.StdFilter(), cmdCh: nil}
 	for _, c := range tests {
-		r, err := setUniqueHandler(config, fw, c.args)
+		r, err := setUniqueHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -177,10 +177,10 @@ func Test_checkHandler(t *testing.T) {
 	}
 
 	config := Config{}
-	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
-	setUniqueHandler(config, fw, setArgs)
+	f := &filter{f: cuckoo.StdFilter(), cmdCh: nil}
+	setUniqueHandler(config, f, setArgs)
 	for _, c := range tests {
-		result, err := checkHandler(config, fw, c.args)
+		result, err := checkHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -219,10 +219,10 @@ func Test_deleteHandler(t *testing.T) {
 	}
 
 	config := Config{}
-	fw := &filterWrapper{f: cuckoo.StdFilter(), cmdCh: nil}
-	setUniqueHandler(config, fw, setArgs)
+	f := &filter{f: cuckoo.StdFilter(), cmdCh: nil}
+	setUniqueHandler(config, f, setArgs)
 	for _, c := range tests {
-		result, err := deleteHandler(config, fw, c.args)
+		result, err := deleteHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue
@@ -277,13 +277,13 @@ func Test_backupHandler(t *testing.T) {
 			config.BackupFolder = ""
 		}
 
-		fw := &filterWrapper{name: c.name, f: cuckoo.StdFilter()}
-		_, err := setHandler(config, fw, []string{"a", "b", "c", "d"})
+		f := &filter{name: c.name, f: cuckoo.StdFilter()}
+		_, err := setHandler(config, f, []string{"a", "b", "c", "d"})
 		if err != nil {
 			t.Fatalf("unexpected error for setHandler: %v", err)
 		}
 
-		res, err := backupHandler(config, fw, []string{path})
+		res, err := backupHandler(config, f, []string{path})
 		if err != nil {
 			if c.err {
 				continue
@@ -338,8 +338,8 @@ func Test_loadHandler(t *testing.T) {
 			config.BackupFolder = ""
 		}
 
-		fw := &filterWrapper{name: c.name}
-		res, err := reloadHandler(config, fw, []string{path})
+		f := &filter{name: c.name}
+		res, err := reloadHandler(config, f, []string{path})
 		if err != nil {
 			if c.err {
 				continue
@@ -352,7 +352,7 @@ func Test_loadHandler(t *testing.T) {
 			t.Fatalf("expected true but got %s", res)
 		}
 
-		res, err = checkHandler(config, fw, []string{"a", "b", "c", "d", "e"})
+		res, err = checkHandler(config, f, []string{"a", "b", "c", "d", "e"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

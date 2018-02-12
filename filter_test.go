@@ -58,10 +58,10 @@ func Test_filterWrapper_integration(t *testing.T) {
 
 	cmdCh := make(chan Executor)
 	respCh := make(chan string)
-	fw := newWrapper("test", cmdCh)
+	f := newWrapper("test", cmdCh)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go fw.listen(ctx, Config{})
+	go f.listen(ctx, Config{})
 	for _, c := range tests {
 		exe, err := parseCommand(c.cmd, respCh)
 		if err != nil {
