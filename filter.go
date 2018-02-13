@@ -64,7 +64,7 @@ func (f *filter) listen(ctx context.Context, config Config, wg *sync.WaitGroup) 
 			if f.f == nil {
 				err := loadFilter(config, f, exe.GetAction())
 				if err != nil {
-					exe.Respond("", config.Debug, err)
+					exe.Respond("", true, err)
 					continue
 				}
 			}

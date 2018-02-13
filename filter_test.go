@@ -118,17 +118,17 @@ func TestFilter_loadFromFS_failure(t *testing.T) {
 	}{
 		{
 			cmd:    "test setu a b c",
-			result: "false",
+			result: "false(filter doesn't exists)",
 		},
 
 		{
 			cmd:    "test check a b",
-			result: "false",
+			result: "false(filter doesn't exists)",
 		},
 
 		{
 			cmd:    "test count",
-			result: "false",
+			result: "false(filter doesn't exists)",
 		},
 	}
 
