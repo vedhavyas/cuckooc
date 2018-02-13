@@ -14,30 +14,39 @@ import (
 )
 
 const (
-	ok    = "true"
-	notOk = "false"
+	ok               = "true"
+	notOk            = "false"
+	actionNew        = "new"
+	actionSet        = "set"
+	actionSetU       = "setu"
+	actionCheck      = "check"
+	actionDelete     = "delete"
+	actionCount      = "count"
+	actionLoadFactor = "loadfactor"
+	actionBackup     = "backup"
+	actionReload     = "reload"
 )
 
 // handlerMux is used to fetch the appropriate handler for a given action
 var handlerMux = map[string]func(config Config, f *filter, args []string) (result string, err error){
-	"create":     createHandler,
-	"set":        setHandler,
-	"setu":       setUniqueHandler,
-	"check":      checkHandler,
-	"delete":     deleteHandler,
-	"count":      countHandler,
-	"loadfactor": loadFactorHandler,
-	"backup":     backupHandler,
-	"reload":     reloadHandler,
+	actionNew:        newHandler,
+	actionSet:        setHandler,
+	actionSetU:       setUniqueHandler,
+	actionCheck:      checkHandler,
+	actionDelete:     deleteHandler,
+	actionCount:      countHandler,
+	actionLoadFactor: loadFactorHandler,
+	actionBackup:     backupHandler,
+	actionReload:     reloadHandler,
 }
 
-// createHandler creates cuckoo filter if not created already
+// newHandler creates cuckoo filter if not created already
 // error when filter is already created
 //
 // args for create handler
-// [filter-name] create [count] [bucket size]
+// [filter-name] new [count] [bucket size]
 // if count/bucket size are not provide, defaults to standard cuckoo filter
-func createHandler(_ Config, f *filter, args []string) (result string, err error) {
+func newHandler(_ Config, f *filter, args []string) (result string, err error) {
 	if f.f != nil {
 		return "", fmt.Errorf("filter already exists")
 	}

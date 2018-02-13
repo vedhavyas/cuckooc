@@ -51,7 +51,7 @@ func Test_createHandler(t *testing.T) {
 	config := Config{}
 	for _, c := range tests {
 		f := new(filter)
-		_, err := createHandler(config, f, c.args)
+		_, err := newHandler(config, f, c.args)
 		if err != nil {
 			if c.err {
 				continue

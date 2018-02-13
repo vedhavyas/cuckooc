@@ -9,6 +9,7 @@ import (
 // and responds with a result
 type Executor interface {
 	FilterName() string
+	GetAction() string
 	Execute(config Config, f *filter) (result string, err error)
 	Respond(result string, debug bool, err error)
 }
@@ -25,6 +26,11 @@ type command struct {
 // FilterName returns the name of the filter
 func (c command) FilterName() string {
 	return c.Filter
+}
+
+// GetAction returns the action of the command
+func (c command) GetAction() string {
+	return c.Action
 }
 
 // Respond sends the result/error over the response chan
