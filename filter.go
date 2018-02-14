@@ -3,6 +3,7 @@ package cuckooc
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/vedhavyas/cuckoo-filter"
@@ -57,8 +58,12 @@ func (f *filter) listen(ctx context.Context, config Config, wg *sync.WaitGroup) 
 	for {
 		select {
 		case <-ctx.Done():
-			// TODO: backup and exit ?
-			// ensure f.f is not nil
+			if f.f != nil {
+				_, err := backupHandler(config, f, nil)
+				if err != nil {
+					log.Printf("%s: failed to backup the filter: %v\n", f.name, err)
+				}
+			}
 			return
 		case exe := <-f.cmdCh:
 			if f.f == nil {
