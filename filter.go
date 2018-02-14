@@ -37,14 +37,13 @@ func newFilter(name string, cmdCh <-chan Executor) *filter {
 // if load fails and if action is new, return nil
 // else respond to command with error
 func loadFilter(config Config, f *filter, action string) error {
-	_, err := reloadHandler(config, f, nil)
-	if err == nil {
+	// if action is new, then simply return nil
+	if action == actionNew {
 		return nil
 	}
 
-	// load from the file system failed. check if the action is new, then create proceed
-	// else fail
-	if action == actionNew {
+	_, err := reloadHandler(config, f, nil)
+	if err == nil {
 		return nil
 	}
 
