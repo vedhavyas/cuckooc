@@ -25,6 +25,7 @@ const (
 	actionLoadFactor = "loadfactor"
 	actionBackup     = "backup"
 	actionReload     = "reload"
+	actionStop       = "stop"
 )
 
 // handlerMux is used to fetch the appropriate handler for a given action
