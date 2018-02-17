@@ -20,10 +20,10 @@ type filterWrapper struct {
 // name of the filter
 // config of the current running service
 // wg is the wait group for all go routines
-func newFilterWrapper(parent context.Context, name string, config Config, wg *sync.WaitGroup) *filterWrapper {
+func newFilterWrapper(parent context.Context, name string, config Config, wg *sync.WaitGroup, gkCmd chan<- string) *filterWrapper {
 	ctx, cancel := context.WithCancel(parent)
 	cmdCh := make(chan Executor)
-	filter := newFilter(name, cmdCh)
+	filter := newFilter(name, cmdCh, gkCmd)
 	wg.Add(1)
 	go filter.listen(ctx, config, wg)
 	return &filterWrapper{cancel: cancel, cmdCh: cmdCh}
@@ -34,15 +34,17 @@ func newFilterWrapper(parent context.Context, name string, config Config, wg *sy
 // workflow is that cmd is sent over to Gatekeeper, which will route it appropriate
 // filter, creates one if not available.
 type Gatekeeper struct {
-	cmdCh   <-chan Executor
+	CMDCh   chan Executor
+	gkCmd   chan string
 	filters map[string]*filterWrapper
 }
 
 // NewGatekeeper for a new Gatekeeper
 func NewGatekeeper() *Gatekeeper {
 	return &Gatekeeper{
-		cmdCh:   make(chan Executor),
+		CMDCh:   make(chan Executor),
 		filters: make(map[string]*filterWrapper),
+		gkCmd:   make(chan string),
 	}
 }
 
@@ -54,11 +56,10 @@ func (gk *Gatekeeper) Start(ctx context.Context, config Config, wg *sync.WaitGro
 		select {
 		case <-ctx.Done():
 			return
-		case cmd := <-gk.cmdCh:
-			// TODO check for keeper level actions
+		case cmd := <-gk.CMDCh:
 			fw, ok := gk.filters[cmd.FilterName()]
 			if !ok {
-				fw = newFilterWrapper(ctx, cmd.FilterName(), config, wg)
+				fw = newFilterWrapper(ctx, cmd.FilterName(), config, wg, gk.gkCmd)
 				gk.filters[cmd.FilterName()] = fw
 			}
 
@@ -67,6 +68,10 @@ func (gk *Gatekeeper) Start(ctx context.Context, config Config, wg *sync.WaitGro
 			go func(cmdCh chan<- Executor, cmd Executor) {
 				cmdCh <- cmd
 			}(fw.cmdCh, cmd)
+		case filterName := <-gk.gkCmd:
+			fw := gk.filters[filterName]
+			fw.cancel()
+			delete(gk.filters, filterName)
 		}
 	}
 }

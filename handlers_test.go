@@ -362,3 +362,15 @@ func Test_loadHandler(t *testing.T) {
 		}
 	}
 }
+
+func Test_stopHandler(t *testing.T) {
+	ch := make(chan string)
+	f := newFilter("test", nil, ch)
+	go func() {
+		stopHandler(Config{}, f, nil)
+	}()
+
+	if f := <-ch; f != "test" {
+		t.Fatalf("expected filter name \"test\" but got %s", f)
+	}
+}

@@ -13,7 +13,7 @@ func runTests(t *testing.T, tests []struct {
 
 	cmdCh := make(chan Executor)
 	respCh := make(chan string)
-	f := newFilter("test", cmdCh)
+	f := newFilter("test", cmdCh, nil)
 	ctx := context.Background()
 	wg := new(sync.WaitGroup)
 	wg.Add(1)

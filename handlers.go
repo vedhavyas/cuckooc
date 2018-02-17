@@ -39,6 +39,7 @@ var handlerMux = map[string]func(config Config, f *filter, args []string) (resul
 	actionLoadFactor: loadFactorHandler,
 	actionBackup:     backupHandler,
 	actionReload:     reloadHandler,
+	actionStop:       stopHandler,
 }
 
 // newHandler creates cuckoo filter if not created already
@@ -235,5 +236,17 @@ func reloadHandler(config Config, f *filter, args []string) (result string, err 
 		return result, fmt.Errorf("failed to load filter: %v", err)
 	}
 
+	return ok, nil
+}
+
+// stopHandler handles all the stop requests sending a stop command to gatekeeper
+//
+// format for stop handler
+// [filter-name] stop
+// since gatekeeper will cancel the context for this filter,
+// the filter will be backed up if the backup folder is provided
+func stopHandler(_ Config, f *filter, _ []string) (result string, err error) {
+	// send info to gatekeeper to remove the filter
+	f.gkCmd <- f.name
 	return ok, nil
 }

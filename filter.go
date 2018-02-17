@@ -14,6 +14,7 @@ type filter struct {
 	name  string
 	f     *cuckoo.Filter
 	cmdCh <-chan Executor
+	gkCmd chan<- string
 }
 
 // backupFilter is used only to backup the filter contents to a persistent disk
@@ -29,8 +30,8 @@ type backupFilter struct {
 // a filter manager passing commands to appropriate filter wrapper which
 // is running in its own go routine. We do not want to block manager to create
 // filter. Hence, we off load it to filter wrapper's go routine
-func newFilter(name string, cmdCh <-chan Executor) *filter {
-	return &filter{name: name, cmdCh: cmdCh}
+func newFilter(name string, cmdCh <-chan Executor, gkCmd chan<- string) *filter {
+	return &filter{name: name, cmdCh: cmdCh, gkCmd: gkCmd}
 }
 
 // loadFilter will reload the last saved filter from persistent storage
