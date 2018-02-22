@@ -1,4 +1,8 @@
 {
   "debug": true,
-  "backup_folder": "./testdata/backups"
+  "backup_folder": "./testdata/backups",
+  "tcp": {
+    "address": ":4000",
+    "idle_close": "30m"
+  }
 }
