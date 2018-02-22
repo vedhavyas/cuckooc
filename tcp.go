@@ -2,6 +2,7 @@ package cuckooc
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -12,10 +13,37 @@ import (
 // tcpLog with specific prefix set
 var tcpLog = log.New(os.Stderr, "TCP", log.LstdFlags)
 
+// readData reads the from the connection and returns it over dataCh
+// if error out, sends it over errCh and returns the chan
+func readData(conn net.Conn, dataCh chan<- []byte, errCh chan<- error) {
+	for {
+		buf := make([]byte, 1024)
+		n, err := conn.Read(buf)
+		if err != nil {
+			errCh <- fmt.Errorf("failed to read data from connection: %v", err)
+			return
+		}
+
+		dataCh <- buf[:n]
+	}
+}
+
 // handleConnection handles a new connection till the connection gets shutdown
 // Additionally, we close an idle connection after idleClose time(0)
+// TODO(ved): use idle close time to close the idle connection and need a way to disable this as well
 func handleConnection(conn net.Conn, idleClose string) {
-
+	dataCh, errCh := make(chan []byte), make(chan error)
+	go readData(conn, dataCh, errCh)
+	for {
+		select {
+		case d := <-dataCh:
+			// TODO(ved): handle the data here
+			tcpLog.Println(d)
+		case err := <-errCh:
+			log.Printf("read error from %s: %v\n", conn.RemoteAddr().String(), err)
+			return
+		}
+	}
 }
 
 // listen listens for the tcp connections and sends it across the channel
@@ -57,7 +85,7 @@ func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup) {
 			tcpLog.Println("shutting down tcp server...")
 			return
 		case conn := <-connCh:
-			tcpLog.Println("handling a new connection...")
+			tcpLog.Printf("handling a new connection from %s\n", conn.RemoteAddr().String())
 			go handleConnection(conn, config.TCP.IdleClose)
 		}
 	}
