@@ -70,3 +70,35 @@ func Test_newInstruction(t *testing.T) {
 		}
 	}
 }
+
+func TestCommand_readCommands(t *testing.T) {
+	tests := []struct {
+		s  string
+		ss []string
+	}{
+		{
+			ss: nil,
+		},
+		{
+			s:  "test new",
+			ss: []string{"test new"},
+		},
+
+		{
+			s:  "test new; test1 set x a b c",
+			ss: []string{"test new", " test1 set x a b c"},
+		},
+
+		{
+			s:  "test new;test1 set x a b c",
+			ss: []string{"test new", "test1 set x a b c"},
+		},
+	}
+
+	for _, c := range tests {
+		ss := readCommands([]byte(c.s))
+		if !reflect.DeepEqual(c.ss, ss) {
+			t.Fatalf("expected %v but got %v", c.ss, ss)
+		}
+	}
+}
