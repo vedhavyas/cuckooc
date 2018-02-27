@@ -31,14 +31,29 @@ func readData(conn net.Conn, dataCh chan<- []byte, errCh chan<- error) {
 // handleConnection handles a new connection till the connection gets shutdown
 // Additionally, we close an idle connection after idleClose time(0)
 // TODO(ved): use idle close time to close the idle connection and need a way to disable this as well
-func handleConnection(conn net.Conn, idleClose string) {
-	dataCh, errCh := make(chan []byte), make(chan error)
+// or else remove this block
+func handleConnection(conn net.Conn, idleClose string, reqCh chan<- Executor) {
+	dataCh, errCh, respCh := make(chan []byte), make(chan error), make(chan string)
+
 	go readData(conn, dataCh, errCh)
 	for {
 		select {
 		case d := <-dataCh:
-			// TODO(ved): handle the data here
-			tcpLog.Println(d)
+			scmds := readCommands(d)
+			var results []string
+			for _, scmd := range scmds {
+				exe, err := parseCommand(scmd, respCh)
+				if err != nil {
+					results = append(results, fmt.Sprintf("%s(%v)", false, err))
+					continue
+				}
+
+				reqCh <- exe
+				results = append(results, <-respCh)
+			}
+
+			conn.Write([]byte(strings.Join(results, "\n")))
+
 		case err := <-errCh:
 			log.Printf("read error from %s: %v\n", conn.RemoteAddr().String(), err)
 			return
@@ -61,7 +76,7 @@ func listen(l net.Listener, connCh chan<- net.Conn) {
 
 // StartTCPServer starts a TCP server on the address provided in the configuration. If none is provided, this is a no-op
 // blocking call. Should be run on a different go routine
-func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup) {
+func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup, reqCh chan<- Executor) {
 	defer wg.Done()
 	addr := strings.TrimSpace(config.TCP.Address)
 	if addr == "" {
@@ -86,7 +101,7 @@ func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup) {
 			return
 		case conn := <-connCh:
 			tcpLog.Printf("handling a new connection from %s\n", conn.RemoteAddr().String())
-			go handleConnection(conn, config.TCP.IdleClose)
+			go handleConnection(conn, config.TCP.IdleClose, reqCh)
 		}
 	}
 
