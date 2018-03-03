@@ -40,9 +40,9 @@ type Gatekeeper struct {
 }
 
 // NewGatekeeper for a new Gatekeeper
-func NewGatekeeper() *Gatekeeper {
+func NewGatekeeper(cmdCh chan Executor) *Gatekeeper {
 	return &Gatekeeper{
-		CMDCh:   make(chan Executor),
+		CMDCh:   cmdCh,
 		filters: make(map[string]*filterWrapper),
 		gkCmd:   make(chan string),
 	}

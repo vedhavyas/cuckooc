@@ -63,7 +63,7 @@ func TestGatekeeper_IntegrationTests(t *testing.T) {
 	}
 
 	respCh := make(chan string)
-	gk := NewGatekeeper()
+	gk := NewGatekeeper(make(chan Executor))
 	wg := new(sync.WaitGroup)
 	ctx, cancel := context.WithCancel(context.Background())
 	wg.Add(1)

@@ -10,10 +10,7 @@ import (
 type Config struct {
 	Debug        bool   `json:"debug"`
 	BackupFolder string `json:"backup_folder"`
-	TCP          struct {
-		Address   string `json:"address"`
-		IdleClose string `json:"idle_close"`
-	} `json:"tcp"`
+	TCP          string `json:"tcp"`
 }
 
 // loadConfig loads the service configuration from the file provided
