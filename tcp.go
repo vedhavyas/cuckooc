@@ -67,7 +67,7 @@ func listen(l net.Listener, connCh chan<- net.Conn) {
 
 // StartTCPServer starts a TCP server on the address provided in the configuration. If none is provided, this is a no-op
 // blocking call. Should be run on a different go routine
-func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup, reqCh chan<- Executor) {
+func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup, cmdCh chan<- Executor) {
 	defer wg.Done()
 	addr := strings.TrimSpace(config.TCP)
 	if addr == "" {
@@ -92,7 +92,7 @@ func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup, reqC
 			return
 		case conn := <-connCh:
 			tcpLog.Printf("handling a new connection from %s\n", conn.RemoteAddr().String())
-			go handleConnection(conn, reqCh)
+			go handleConnection(conn, cmdCh)
 		}
 	}
 

@@ -13,8 +13,8 @@ type Config struct {
 	TCP          string `json:"tcp"`
 }
 
-// loadConfig loads the service configuration from the file provided
-func loadConfig(file string) (config Config, err error) {
+// LoadConfig loads the service configuration from the file provided
+func LoadConfig(file string) (config Config, err error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return config, fmt.Errorf("failed to read the config file: %v", err)

@@ -4,7 +4,7 @@ import "testing"
 
 func TestConfig_loadConfig(t *testing.T) {
 	file := "./testdata/config_example.json"
-	config, err := loadConfig(file)
+	config, err := LoadConfig(file)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
