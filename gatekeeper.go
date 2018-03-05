@@ -2,8 +2,13 @@ package cuckooc
 
 import (
 	"context"
+	"log"
+	"os"
 	"sync"
 )
+
+// gkLog with specific prefix set
+var gkLog = log.New(os.Stderr, "GK: ", log.LstdFlags)
 
 // filterWrapper holds the bare minimum details for a filter
 //
@@ -51,24 +56,30 @@ func NewGatekeeper(cmdCh chan Executor) *Gatekeeper {
 // Start initiates gatekeeper to listen for commands to route over cmdCh
 // blocking call, will need to start in a separate go routine
 func (gk *Gatekeeper) Start(ctx context.Context, config Config, wg *sync.WaitGroup) {
+	gkLog.Println("Starting GateKeeper...")
 	defer wg.Done()
 	for {
 		select {
 		case <-ctx.Done():
+			gkLog.Println("Stopping GateKeeper...")
 			return
 		case cmd := <-gk.CMDCh:
+			gkLog.Printf("new request for filter %s\n", cmd.FilterName())
 			fw, ok := gk.filters[cmd.FilterName()]
 			if !ok {
+				gkLog.Printf("creating a new filter wrapper: %s\n", cmd.FilterName())
 				fw = newFilterWrapper(ctx, cmd.FilterName(), config, wg, gk.gkCmd)
 				gk.filters[cmd.FilterName()] = fw
 			}
 
-			// lets not wait for wrapper to get free
+			// lets not wait here for filter wrapper
 			// send the command over a different go routine
 			go func(cmdCh chan<- Executor, cmd Executor) {
 				cmdCh <- cmd
+				gkLog.Printf("request routed to filter: %s\n", cmd.FilterName())
 			}(fw.cmdCh, cmd)
 		case filterName := <-gk.gkCmd:
+			gkLog.Printf("stop request from filter %s\n", filterName)
 			fw := gk.filters[filterName]
 			fw.cancel()
 			delete(gk.filters, filterName)

@@ -86,7 +86,7 @@ func parseCommand(cmd string, respChan chan<- string) (*command, error) {
 
 // readCommands will read the data and returns the string commands back
 //
-// multiple commands can be sent in through tcp/udp data with ; as a delimiter
+// multiple commands can be sent in through tcp/udp data with \n as a delimiter
 // TODO(ved): support command set
 func readCommands(data []byte) []string {
 	if len(data) < 1 {
@@ -94,5 +94,5 @@ func readCommands(data []byte) []string {
 	}
 
 	s := strings.TrimSpace(string(data))
-	return strings.Split(s, ";")
+	return strings.Split(s, "\n")
 }

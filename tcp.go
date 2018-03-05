@@ -11,7 +11,7 @@ import (
 )
 
 // tcpLog with specific prefix set
-var tcpLog = log.New(os.Stderr, "TCP", log.LstdFlags)
+var tcpLog = log.New(os.Stderr, "TCP: ", log.LstdFlags)
 
 // handleConnection handles a new connection
 func handleConnection(conn net.Conn, reqCh chan<- Executor) {
@@ -30,15 +30,25 @@ func handleConnection(conn net.Conn, reqCh chan<- Executor) {
 		for _, scmd := range scmds {
 			exe, err := parseCommand(scmd, respCh)
 			if err != nil {
+				tcpLog.Printf("failed to parse command: %v", err)
 				results = append(results, fmt.Sprintf("%s(%v)", notOk, err))
 				continue
 			}
 
+			tcpLog.Printf("sending request to gatekeper...")
 			reqCh <- exe
-			results = append(results, <-respCh)
+			res := <-respCh
+			results = append(results, res)
+			tcpLog.Printf("response received: %s\n", res)
 		}
 
-		conn.Write([]byte(strings.Join(results, "\n")))
+		n, err = conn.Write([]byte(strings.Join(results, "\n")))
+		if err != nil {
+			tcpLog.Printf("failed to write response to the socket: %v\n", err)
+			return
+		}
+
+		tcpLog.Printf("%d bytes written to the socket\n", n)
 	}
 }
 

@@ -85,12 +85,12 @@ func TestCommand_readCommands(t *testing.T) {
 		},
 
 		{
-			s:  "test new; test1 set x a b c",
+			s:  "test new\n test1 set x a b c",
 			ss: []string{"test new", " test1 set x a b c"},
 		},
 
 		{
-			s:  "test new;test1 set x a b c",
+			s:  "test new\ntest1 set x a b c",
 			ss: []string{"test new", "test1 set x a b c"},
 		},
 	}
