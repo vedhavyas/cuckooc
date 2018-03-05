@@ -41,6 +41,21 @@ func TestTCP_integration(t *testing.T) {
 			cmd:    "test check a b 1 2 c d e f g",
 			result: "true true false false true true true true true",
 		},
+
+		{
+			cmd:    "test set 1 2 3 4\ntest check 1 2 3 5",
+			result: "true true true true\ntrue true true false",
+		},
+
+		{
+			cmd:    "test backup ./testdata/backups-3",
+			result: "true",
+		},
+
+		{
+			cmd:    "test stop",
+			result: "true",
+		},
 	}
 
 	c, err := net.Dial("tcp", config.TCP)
