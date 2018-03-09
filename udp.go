@@ -21,7 +21,7 @@ type udpMessage struct {
 
 func processUDPMessage(msg udpMessage, cmdCh chan<- Executor, result chan<- udpMessage) {
 	respCh := make(chan string)
-	close(respCh)
+	defer close(respCh)
 	msg.resp = executeMessages(msg.cmds, respCh, cmdCh, udpLog)
 	msg.done = true
 	result <- msg
