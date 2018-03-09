@@ -1,85 +1,24 @@
 package cuckooc
 
 import (
-	"context"
 	"net"
 	"runtime"
-	"sync"
 	"testing"
 )
 
 func TestTCP_integration(t *testing.T) {
-	wg := new(sync.WaitGroup)
-	defer wg.Wait()
 	config := Config{TCP: ":4000"}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, wg, reqCh, cancel := initSocket(config)
+	defer wg.Wait()
 	defer cancel()
-
-	reqCh := make(chan Executor)
-	gk := NewGatekeeper(reqCh)
-	wg.Add(2)
-	go gk.Start(ctx, config, wg)
-	runtime.Gosched()
+	wg.Add(1)
 	go StartTCPServer(ctx, config, wg, reqCh)
 	runtime.Gosched()
-
-	tests := []struct {
-		cmd    string
-		result string
-	}{
-		{
-			cmd:    "test new",
-			result: "true",
-		},
-
-		{
-			cmd:    "test setu a b c d e f g",
-			result: "true true true true true true true",
-		},
-
-		{
-			cmd:    "test check a b 1 2 c d e f g",
-			result: "true true false false true true true true true",
-		},
-
-		{
-			cmd:    "test set 1 2 3 4\ntest check 1 2 3 5",
-			result: "true true true true\ntrue true true false",
-		},
-
-		{
-			cmd:    "test backup ./testdata/backups-3",
-			result: "true",
-		},
-
-		{
-			cmd:    "test stop",
-			result: "true",
-		},
-	}
 
 	c, err := net.Dial("tcp", config.TCP)
 	if err != nil {
 		t.Fatalf("failed to initiate tcp connection: %v", err)
 	}
 
-	for _, s := range tests {
-		_, err := c.Write([]byte(s.cmd))
-		if err != nil {
-			t.Fatalf("failed to write data on socket: %v", err)
-		}
-
-		b := make([]byte, 1024)
-		n, err := c.Read(b)
-		if err != nil {
-			t.Fatalf("failed to read data from socket :%v", err)
-		}
-
-		res := string(b[:n])
-		if s.result != res {
-			t.Fatalf("expected %s but got %s", s.result, res)
-		}
-	}
-
-	c.Close()
+	testSocket(t, c)
 }

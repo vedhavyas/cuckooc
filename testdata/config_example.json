@@ -1,5 +1,6 @@
 {
   "debug": true,
   "backup_folder": "./testdata/backups",
-  "tcp": ":4000"
+  "tcp": ":4000",
+  "udp": ":5000"
 }

@@ -11,6 +11,7 @@ type Config struct {
 	Debug        bool   `json:"debug"`
 	BackupFolder string `json:"backup_folder"`
 	TCP          string `json:"tcp"`
+	UDP          string `json:"udp"`
 }
 
 // LoadConfig loads the service configuration from the file provided

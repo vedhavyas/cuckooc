@@ -38,10 +38,11 @@ func main() {
 	wg.Add(1)
 	go gk.Start(ctx, c, wg)
 
-	if c.TCP != "" {
-		wg.Add(1)
-		go cuckooc.StartTCPServer(ctx, c, wg, cmdCh)
-	}
+	wg.Add(1)
+	go cuckooc.StartTCPServer(ctx, c, wg, cmdCh)
+
+	wg.Add(1)
+	go cuckooc.StartUDPServer(ctx, c, wg, cmdCh)
 
 	sigInt := make(chan os.Signal, 1)
 	signal.Notify(sigInt, os.Interrupt)

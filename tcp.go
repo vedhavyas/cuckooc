@@ -13,42 +13,47 @@ import (
 // tcpLog with specific prefix set
 var tcpLog = log.New(os.Stderr, "TCP: ", log.LstdFlags)
 
+// executeMessages send given commands to gatekeeper and return response
+func executeMessages(cmds []string, respCh chan string, reqCh chan<- Executor, log *log.Logger) (response string) {
+	var results []string
+	for _, scmd := range cmds {
+		exe, err := parseCommand(scmd, respCh)
+		if err != nil {
+			log.Printf("failed to parse command: %v", err)
+			results = append(results, fmt.Sprintf("%s(%v)", notOk, err))
+			continue
+		}
+
+		log.Printf("sending request to gatekeper...")
+		reqCh <- exe
+		res := <-respCh
+		results = append(results, res)
+		log.Printf("response received: %s\n", res)
+	}
+
+	return strings.Join(results, "\n")
+}
+
 // handleConnection handles a new connection
 func handleConnection(conn net.Conn, reqCh chan<- Executor) {
 	respCh := make(chan string)
-
+	buf := make([]byte, 1024)
 	for {
-		buf := make([]byte, 1024)
 		n, err := conn.Read(buf)
 		if err != nil {
 			log.Printf("read error from %s: %v\n", conn.RemoteAddr().String(), err)
 			return
 		}
 
-		scmds := readCommands(buf[:n])
-		var results []string
-		for _, scmd := range scmds {
-			exe, err := parseCommand(scmd, respCh)
-			if err != nil {
-				tcpLog.Printf("failed to parse command: %v", err)
-				results = append(results, fmt.Sprintf("%s(%v)", notOk, err))
-				continue
-			}
-
-			tcpLog.Printf("sending request to gatekeper...")
-			reqCh <- exe
-			res := <-respCh
-			results = append(results, res)
-			tcpLog.Printf("response received: %s\n", res)
-		}
-
-		n, err = conn.Write([]byte(strings.Join(results, "\n")))
+		cmds := readCommands(buf[:n])
+		resp := executeMessages(cmds, respCh, reqCh, tcpLog)
+		n, err = conn.Write([]byte(resp))
 		if err != nil {
 			tcpLog.Printf("failed to write response to the socket: %v\n", err)
 			return
 		}
 
-		tcpLog.Printf("%d bytes written to the socket\n", n)
+		tcpLog.Printf("%d bytes written to socket %s\n", n, conn.RemoteAddr().String())
 	}
 }
 
@@ -69,9 +74,10 @@ func listen(l net.Listener, connCh chan<- net.Conn) {
 // blocking call. Should be run on a different go routine
 func StartTCPServer(ctx context.Context, config Config, wg *sync.WaitGroup, cmdCh chan<- Executor) {
 	defer wg.Done()
+
 	addr := strings.TrimSpace(config.TCP)
 	if addr == "" {
-		tcpLog.Printf("no tcp address given")
+		tcpLog.Printf("TCP transport disabled...")
 		return
 	}
 
