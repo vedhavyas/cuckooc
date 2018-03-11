@@ -2,6 +2,8 @@ package cuckooc
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sync"
 	"testing"
 )
@@ -132,6 +134,10 @@ func TestFilter_loadFromFS_failure(t *testing.T) {
 	}
 
 	runTests(t, tests, Config{BackupFolder: "./testdata/backups-3"})
+	err := os.RemoveAll("./testdata/backups-3")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func TestFilter_loadFromFS_action_success(t *testing.T) {
