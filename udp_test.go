@@ -45,11 +45,6 @@ func testSocket(t *testing.T, c net.Conn) {
 		},
 
 		{
-			cmd:    "test backup ./testdata/backups-3",
-			result: "true",
-		},
-
-		{
 			cmd:    "test stop",
 			result: "true",
 		},
