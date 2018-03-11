@@ -61,6 +61,7 @@ func (f *filter) listen(ctx context.Context, config Config, wg *sync.WaitGroup) 
 	for {
 		select {
 		case <-ctx.Done():
+			// TODO(ved): ability to skip or backup at a different location
 			if f.f != nil {
 				_, err := backupHandler(config, f, nil)
 				if err != nil {

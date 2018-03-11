@@ -1,0 +1,4 @@
+package: github.com/vedhavyas/cuckooc
+import:
+- package: github.com/vedhavyas/cuckoo-filter
+  version: ^1.6.0

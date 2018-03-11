@@ -1,0 +1,8 @@
+hash: f452c1f2c548c24867c53d8e84a810a3178719d2cdd89afb7d34a6e8fadd095f
+updated: 2018-03-11T11:56:52.472916+05:30
+imports:
+- name: github.com/spaolacci/murmur3
+  version: 9f5d223c60793748f04a9d5b4b4eacddfc1f755d
+- name: github.com/vedhavyas/cuckoo-filter
+  version: 93d42e3eb08816e83f5f5d90b269702a1ee0c652
+testImports: []
